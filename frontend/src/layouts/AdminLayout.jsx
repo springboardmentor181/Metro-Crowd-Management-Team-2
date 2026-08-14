@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import AdminSidebar from "@/components/admin/Sidebar";
 import AdminNavbar from "@/components/admin/Navbar";
+import ChatAssistant from "@/components/common/ChatAssistant";
 
 export default function AdminLayout() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -17,6 +18,7 @@ export default function AdminLayout() {
           </div>
         </main>
       </div>
+      <ChatAssistant />
     </div>
   );
 }

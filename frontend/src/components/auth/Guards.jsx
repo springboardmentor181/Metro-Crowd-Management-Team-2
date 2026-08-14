@@ -1,7 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useApp } from '@/hooks/useApp';
-import { ROUTES } from '@/constants';
+import { ROUTES, ROLES } from '@/constants';
 import Spinner from '@/components/common/Spinner';
 
 function FullScreenLoader() {
@@ -45,6 +45,11 @@ export function RequireRoleAndCity({ expectedRole, children }) {
   const { role, cityId } = useApp();
   if (!role) return <Navigate to={ROUTES.SELECT_ROLE} replace />;
   if (role !== expectedRole) return <Navigate to={ROUTES.SELECT_ROLE} replace />;
-  if (!cityId) return <Navigate to={ROUTES.SELECT_CITY} replace />;
+  if (!cityId) {
+    // Administrators verify their city assignment via OTP as part of the
+    // Continue As flow — they should never land on the plain passenger
+    // city picker, which has no verification step.
+    return <Navigate to={expectedRole === ROLES.ADMIN ? ROUTES.SELECT_ROLE : ROUTES.SELECT_CITY} replace />;
+  }
   return children;
 }

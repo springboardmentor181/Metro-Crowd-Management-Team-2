@@ -3,7 +3,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
 const Input = forwardRef(function Input(
-  { label, error, hint, icon: Icon, type = 'text', className, id, ...rest },
+  { label, error, hint, icon: Icon, type = 'text', className, labelClassName, id, ...rest },
   ref
 ) {
   const [showPassword, setShowPassword] = useState(false);
@@ -14,7 +14,7 @@ const Input = forwardRef(function Input(
   return (
     <div className="w-full">
       {label && (
-        <label htmlFor={inputId} className="mb-1.5 block text-sm font-medium text-slate-700">
+        <label htmlFor={inputId} className={cn('mb-1.5 block text-sm font-medium text-slate-700', labelClassName)}>
           {label}
         </label>
       )}

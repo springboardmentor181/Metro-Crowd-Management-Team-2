@@ -1,6 +1,4 @@
-// Static metadata for each metro city. Individual station/train/analytics
-// records are produced on demand by `cityDataGenerator.js`, keyed off the
-// city id, so switching cities regenerates a full, consistent dataset.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
 
 const LINE_PALETTE = [
   { name: 'Blue Line', color: '#2f5df0' },
@@ -109,3 +107,16 @@ export const cities = [
 ];
 
 export const getCityById = (id) => cities.find((c) => c.id === id);
+
+/** Optional helper to fetch dynamic city list from FastAPI */
+export async function fetchCitiesFromBackend() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/cities`);
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (err) {
+    console.warn('FastAPI backend offline for cities list, using static list');
+  }
+  return cities;
+}

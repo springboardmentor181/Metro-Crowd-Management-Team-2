@@ -1,35 +1,15 @@
-import { useState, useRef, useEffect } from 'react';
-import { Menu, ChevronDown, LogOut, User, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
+import { Menu, RefreshCw } from 'lucide-react';
 import SearchBar from '@/components/common/SearchBar';
+import ProfileDropdown from '@/components/common/ProfileDropdown';
 import ChangeCityModal from '@/components/modals/ChangeCityModal';
-import { useAuth } from '@/hooks/useAuth';
 import { useApp } from '@/hooks/useApp';
-import { useNavigate } from 'react-router-dom';
-import { getInitials } from '@/utils/formatters';
 import { ROUTES } from '@/constants';
 
 export default function PassengerNavbar({ onOpenMobileMenu }) {
-  const { user, logout } = useAuth();
-  const { city, resetSelection } = useApp();
-  const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
+  const { city } = useApp();
   const [changeCityOpen, setChangeCityOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const menuRef = useRef(null);
-
-  useEffect(() => {
-    function handleClickOutside(e) {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const handleLogout = () => {
-    logout();
-    resetSelection();
-    navigate(ROUTES.LOGIN);
-  };
 
   return (
     <>
@@ -60,35 +40,7 @@ export default function PassengerNavbar({ onOpenMobileMenu }) {
             <RefreshCw className="h-4 w-4" />
           </button>
 
-          <div className="relative" ref={menuRef}>
-            <button
-              onClick={() => setMenuOpen((v) => !v)}
-              className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white py-1.5 pl-1.5 pr-2.5 hover:bg-slate-50 focus-ring"
-            >
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-violet-500 text-xs font-bold text-white">
-                {getInitials(user?.name)}
-              </div>
-              <span className="hidden text-sm font-medium text-slate-700 sm:block">{user?.name?.split(' ')[0] || 'Guest'}</span>
-              <ChevronDown className="hidden h-3.5 w-3.5 text-slate-400 sm:block" />
-            </button>
-
-            {menuOpen && (
-              <div className="absolute right-0 mt-2 w-52 origin-top-right rounded-xl border border-slate-200 bg-white shadow-lg animate-fade-in">
-                <div className="border-b border-slate-100 px-4 py-3">
-                  <p className="truncate text-sm font-semibold text-slate-800">{user?.name}</p>
-                  <p className="truncate text-xs text-slate-400">{user?.email}</p>
-                </div>
-                <div className="p-1.5">
-                  <div className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-500">
-                    <User className="h-4 w-4" /> Passenger account
-                  </div>
-                  <button onClick={handleLogout} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-danger hover:bg-danger/10">
-                    <LogOut className="h-4 w-4" /> Sign Out
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+          <ProfileDropdown profileTo={ROUTES.PASSENGER.PROFILE} settingsTo={ROUTES.PASSENGER.SETTINGS} />
         </div>
       </header>
 

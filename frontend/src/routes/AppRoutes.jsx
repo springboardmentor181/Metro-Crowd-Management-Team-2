@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import { ROUTES, ROLES } from '@/constants';
 
 import { RequireAuth, PublicOnlyRoute, RequireRoleAndCity } from '@/components/auth/Guards';
@@ -6,8 +6,11 @@ import PassengerLayout from '@/layouts/PassengerLayout';
 import AdminLayout from '@/layouts/AdminLayout';
 
 import Login from '@/pages/auth/Login';
+import Landing from '@/pages/Landing';
 import RoleSelect from '@/pages/auth/RoleSelect';
 import CitySelect from '@/pages/auth/CitySelect';
+import AdminSelectCity from '@/pages/auth/AdminSelectCity';
+import AdminSelectStation from '@/pages/auth/AdminSelectStation';
 
 import PassengerDashboard from '@/pages/passenger/Dashboard';
 import JourneyPlanner from '@/pages/passenger/JourneyPlanner';
@@ -27,11 +30,13 @@ import Reports from '@/pages/admin/Reports';
 import UserManagement from '@/pages/admin/UserManagement';
 
 import NotFound from '@/pages/NotFound';
+import Profile from '@/pages/Profile';
+import Settings from '@/pages/Settings';
 
 export default function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to={ROUTES.LOGIN} replace />} />
+      <Route path={ROUTES.HOME} element={<Landing />} />
 
       <Route
         path={ROUTES.LOGIN}
@@ -58,6 +63,22 @@ export default function AppRoutes() {
           </RequireAuth>
         }
       />
+      <Route
+        path={ROUTES.ADMIN_SELECT_CITY}
+        element={
+          <RequireAuth>
+            <AdminSelectCity />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path={ROUTES.ADMIN_SELECT_STATION}
+        element={
+          <RequireAuth>
+            <AdminSelectStation />
+          </RequireAuth>
+        }
+      />
 
       {/* Passenger flow */}
       <Route
@@ -76,6 +97,8 @@ export default function AppRoutes() {
         <Route path={ROUTES.PASSENGER.AI_SUGGESTIONS} element={<AISuggestions />} />
         <Route path={ROUTES.PASSENGER.EMERGENCY_HELP} element={<EmergencyHelp />} />
         <Route path={ROUTES.PASSENGER.ABOUT} element={<About />} />
+        <Route path={ROUTES.PASSENGER.PROFILE} element={<Profile />} />
+        <Route path={ROUTES.PASSENGER.SETTINGS} element={<Settings />} />
       </Route>
 
       {/* Administrator flow */}
@@ -96,6 +119,8 @@ export default function AppRoutes() {
         <Route path={ROUTES.ADMIN.AI_PREDICTION} element={<AIPrediction />} />
         <Route path={ROUTES.ADMIN.REPORTS} element={<Reports />} />
         <Route path={ROUTES.ADMIN.USERS} element={<UserManagement />} />
+        <Route path={ROUTES.ADMIN.PROFILE} element={<Profile />} />
+        <Route path={ROUTES.ADMIN.SETTINGS} element={<Settings />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />

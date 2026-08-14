@@ -19,10 +19,12 @@ export function AuthProvider({ children }) {
     return session;
   }, []);
 
-  const register = useCallback(async (details) => {
-    const session = await authService.register(details);
-    setUser(session.user);
-    return session;
+  /**
+   * Creates a new account but does NOT sign the user in — per the "Create
+   * Account" popup flow, control returns to the Login popup afterwards.
+   */
+  const registerAccount = useCallback(async (details) => {
+    return authService.registerAccount(details);
   }, []);
 
   const logout = useCallback(() => {
@@ -30,8 +32,37 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
+  const updateProfile = useCallback(
+    (patch) => {
+      if (!user) return null;
+      const updated = authService.updateUserProfile(user.id, patch);
+      if (updated) setUser(updated);
+      return updated;
+    },
+    [user]
+  );
+
+  const changePassword = useCallback(
+    (payload) => {
+      if (!user) throw new Error('Not signed in.');
+      return authService.changePassword(user.id, payload);
+    },
+    [user]
+  );
+
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: Boolean(user), isInitializing, login, register, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated: Boolean(user),
+        isInitializing,
+        login,
+        registerAccount,
+        logout,
+        updateProfile,
+        changePassword,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -3,6 +3,7 @@ import { Outlet } from "react-router-dom";
 import PassengerSidebar from "@/components/passenger/Sidebar";
 import PassengerNavbar from "@/components/passenger/Navbar";
 import HighCrowdAlert from "@/components/modals/HighCrowdAlert";
+import ChatAssistant from "@/components/common/ChatAssistant";
 
 export default function PassengerLayout() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -19,6 +20,7 @@ export default function PassengerLayout() {
         </main>
       </div>
       <HighCrowdAlert />
+      <ChatAssistant />
     </div>
   );
 }

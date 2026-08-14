@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Users, ShieldCheck, MapPin, Sparkles, BarChart3, CalendarClock, FileBarChart, Check } from 'lucide-react';
+import { ArrowLeft, Users, ShieldCheck, MapPin, Sparkles, BarChart3, CalendarClock, FileBarChart, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useApp } from '@/hooks/useApp';
@@ -33,17 +33,39 @@ const OPTIONS = [
 ];
 
 export default function RoleSelect() {
-  const { user } = useAuth();
-  const { setRole } = useApp();
+  const { user, logout } = useAuth();
+  const { setRole, resetSelection } = useApp();
   const navigate = useNavigate();
 
   const handleSelect = (role) => {
+    if (role === ROLES.ADMIN) {
+      // Administrators pick their metro city, then their station, and only
+      // then verify their employee identity — role/city are committed to
+      // AppContext once that verification succeeds (see AdminSelectStation).
+      navigate(ROUTES.ADMIN_SELECT_CITY);
+      return;
+    }
     setRole(role);
     navigate(ROUTES.SELECT_CITY);
   };
 
+  const handleBack = () => {
+    // Signs out and returns to the Landing Page, per spec — otherwise an
+    // authenticated user would just be redirected straight back here.
+    logout();
+    resetSelection();
+    navigate(ROUTES.HOME);
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-app-gradient px-4 py-12">
+      <button
+        onClick={handleBack}
+        className="absolute left-4 top-4 flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 hover:bg-white/60 focus-ring sm:left-6 sm:top-6"
+      >
+        <ArrowLeft className="h-4 w-4" /> Back
+      </button>
+
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}

@@ -2,8 +2,7 @@ import { seededRandom } from '@/utils/formatters';
 import { occupancyToStatus } from '@/constants';
 import { getCityById } from '@/data/cities';
 
-// Generic, non-place-specific name parts used to build believable station
-// names for the demo without claiming to represent real, specific stations.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
 const NAME_PREFIX = [
   'Central', 'North', 'South', 'East', 'West', 'New', 'Old', 'Model', 'Green',
   'Lake', 'Hill', 'River', 'Garden', 'Civic', 'Metro', 'Palace', 'Fort',
@@ -13,10 +12,6 @@ const NAME_SUFFIX = [
   'Nagar', 'Chowk', 'Circle', 'Square', 'Park', 'Colony', 'Cross', 'Terminal',
   'Gate', 'Junction', 'Enclave', 'Vihar', 'Bazaar', 'Road', 'Gardens', 'Hub',
 ];
-
-// Caps the number of individually-generated station records per city so the
-// UI stays fast and readable — the city's *official* stationsCount stat
-// (shown on the city selection card) is unaffected by this cap.
 const MAX_GENERATED_STATIONS = 24;
 
 function buildStationName(rand, index) {
@@ -28,10 +23,32 @@ function buildStationName(rand, index) {
 const cache = new Map();
 
 /**
- * Generates a full, internally-consistent mock dataset for a given city id.
- * Cached per city so repeated calls (across pages) return the same objects.
+ * Syncs full city dataset from FastAPI PostgreSQL backend into local cache.
+ */
+async function syncFromBackend(cityId) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/cities/${cityId}/full-data`);
+    if (res.ok) {
+      const backendData = await res.json();
+      if (backendData && backendData.stations) {
+        cache.set(cityId, backendData);
+      }
+    }
+  } catch (err) {
+    // Backend silent fallback to local dataset
+  }
+}
+
+/**
+ * Generates a full, internally-consistent dataset for a given city id,
+ * seamlessly fetching live data from FastAPI backend when connected.
  */
 export function generateCityData(cityId) {
+  if (!cityId) return null;
+
+  // Trigger background async sync with FastAPI PostgreSQL backend
+  syncFromBackend(cityId);
+
   if (cache.has(cityId)) return cache.get(cityId);
 
   const city = getCityById(cityId);
@@ -103,7 +120,6 @@ export function generateCityData(cityId) {
     '05:00','06:00','07:00','08:00','09:00','10:00','11:00','12:00',
     '13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00','22:00',
   ].map((hour, i) => {
-    // Rough bimodal commuter curve (AM + PM peaks)
     const shapeAM = Math.exp(-Math.pow(i - 3, 2) / 6);
     const shapePM = Math.exp(-Math.pow(i - 13, 2) / 8);
     const base = (shapeAM * 0.6 + shapePM * 0.75 + 0.08) * (city.dailyPassengers / 11);
