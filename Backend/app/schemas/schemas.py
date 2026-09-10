@@ -7,6 +7,14 @@ class LoginRequest(BaseModel):
     password: str
     rememberMe: Optional[bool] = False
 
+class SocialLoginRequest(BaseModel):
+    provider: str  # google, microsoft
+    email: str
+    name: Optional[str] = None
+    profileImage: Optional[str] = None
+    providerId: Optional[str] = None
+    rememberMe: Optional[bool] = True
+
 class RegisterRequest(BaseModel):
     name: str
     email: str
@@ -41,12 +49,14 @@ class SessionResponse(BaseModel):
 
 # OTP Schemas
 class SendOtpRequest(BaseModel):
-    phone: str
+    phone: Optional[str] = None
+    email: Optional[str] = None
     employeeId: Optional[str] = None
 
 class VerifyOtpRequest(BaseModel):
     code: str
     phone: Optional[str] = None
+    email: Optional[str] = None
 
 # Station & Crowd Schemas
 class UpdateStationCrowd(BaseModel):
@@ -85,3 +95,12 @@ class JourneyPlanResponse(BaseModel):
     crowdLevel: str
     optimalTime: str
     steps: List[JourneyStep]
+
+class BookTicketRequest(BaseModel):
+    cityId: str
+    originStation: str
+    destinationStation: str
+    ticketType: Optional[str] = "Single Journey"
+    passengerCount: Optional[int] = 1
+    fare: float
+    userId: Optional[str] = None

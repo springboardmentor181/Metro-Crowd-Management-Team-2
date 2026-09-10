@@ -4,10 +4,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'react-toastify';
-import { Mail, Lock, LogIn, Info } from 'lucide-react';
+import { Mail, Lock, LogIn } from 'lucide-react';
 import Input from '@/components/common/Input';
 import Button from '@/components/common/Button';
-import { GoogleIcon, MicrosoftIcon } from '@/components/common/BrandIcons';
+import { GoogleIcon } from '@/components/common/BrandIcons';
+import SocialOAuthModal from '@/components/auth/SocialOAuthModal';
 import { useAuth } from '@/hooks/useAuth';
 
 const schema = z.object({
@@ -24,12 +25,15 @@ const schema = z.object({
  * existing role/city selection flow.
  */
 export default function AuthenticationModal({ onSignedIn, onCreateAccount }) {
-  const { login } = useAuth();
+  const { login, loginWithSocial } = useAuth();
   const [serverError, setServerError] = useState('');
+  const [socialLoading, setSocialLoading] = useState(null); // 'google' | null
+  const [socialModalProvider, setSocialModalProvider] = useState(null); // 'google' | null
 
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm({ resolver: zodResolver(schema), defaultValues: { email: '', password: '', rememberMe: true } });
 
@@ -44,22 +48,44 @@ export default function AuthenticationModal({ onSignedIn, onCreateAccount }) {
     }
   };
 
+  const handleSocialConfirm = async ({ provider, email, name, phone }) => {
+    setServerError('');
+    setSocialLoading(provider);
+    try {
+      const providerLabel = provider === 'google' ? 'Google' : 'Microsoft';
+
+      await loginWithSocial({
+        provider,
+        email,
+        name: name || (provider === 'google' ? 'Google User' : 'Microsoft User'),
+        phone,
+        rememberMe: true,
+      });
+
+      toast.success(`Signed in successfully with ${providerLabel}!`);
+      setSocialModalProvider(null);
+      onSignedIn();
+    } catch (err) {
+      setServerError(err.message || `Unable to sign in with ${provider}.`);
+    } finally {
+      setSocialLoading(null);
+    }
+  };
+
+  const handleSocialClick = (provider) => {
+    setSocialModalProvider(provider);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, x: 12 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -12 }}
       transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+      className="relative"
     >
       <h2 className="font-display text-2xl font-bold text-white">Welcome Back</h2>
       <p className="mt-1 text-sm text-white/70">Sign in to continue</p>
-
-      <div className="mt-4 flex items-start gap-2 rounded-xl border border-white/20 bg-white/10 px-3.5 py-2.5 text-xs text-white/80">
-        <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-        <span>
-          Demo -- <span className="font-mono">demo@metroflow.app</span> / <span className="font-mono">MetroFlow@123</span>
-        </span>
-      </div>
 
       <form className="mt-5 space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
         <Input
@@ -113,19 +139,23 @@ export default function AuthenticationModal({ onSignedIn, onCreateAccount }) {
       <div className="space-y-2.5">
         <button
           type="button"
-          onClick={() => toast.info('Google sign-in would open here.')}
-          className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-white/25 bg-white/90 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-white focus-ring"
+          onClick={() => handleSocialClick('google')}
+          disabled={Boolean(socialLoading)}
+          className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-white/25 bg-white/90 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-white focus-ring disabled:opacity-60"
         >
-          <GoogleIcon /> Continue with Google
-        </button>
-        <button
-          type="button"
-          onClick={() => toast.info('Microsoft sign-in would open here.')}
-          className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-white/25 bg-white/90 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-white focus-ring"
-        >
-          <MicrosoftIcon /> Continue with Microsoft
+          <GoogleIcon /> {socialLoading === 'google' ? 'Signing in with Google...' : 'Continue with Google'}
         </button>
       </div>
+
+      {/* Realistic Interactive Social OAuth Modal (Account Picker & Security Verification) */}
+      {socialModalProvider && (
+        <SocialOAuthModal
+          provider={socialModalProvider}
+          initialEmail={watch('email')}
+          onClose={() => setSocialModalProvider(null)}
+          onConfirm={handleSocialConfirm}
+        />
+      )}
 
       <p className="mt-6 text-center text-sm text-white/70">
         Don't have an account?{' '}

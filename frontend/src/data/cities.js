@@ -1,122 +1,164 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
-
-const LINE_PALETTE = [
-  { name: 'Blue Line', color: '#2f5df0' },
-  { name: 'Red Line', color: '#f04438' },
-  { name: 'Green Line', color: '#17b26a' },
-  { name: 'Purple Line', color: '#7c5cff' },
-  { name: 'Yellow Line', color: '#f7c948' },
-  { name: 'Orange Line', color: '#f98407' },
-];
-
-function linesFor(count) {
-  return LINE_PALETTE.slice(0, count);
-}
+// Static metadata for each metro city matching station_master.csv and real-time map data
 
 export const cities = [
   {
     id: 'delhi',
     name: 'Delhi Metro',
     state: 'Delhi',
-    stations: 38,
-    linesCount: 4,
+    stations: 256,
+    linesCount: 10,
     dailyPassengers: 6500000,
-    lines: linesFor(4),
+    totalTrains: 310,
+    lines: [
+      { name: 'Red Line', color: '#f04438' },
+      { name: 'Yellow Line', color: '#f7c948' },
+      { name: 'Blue Line', color: '#2f5df0' },
+      { name: 'Blue Line Branch', color: '#2563eb' },
+      { name: 'Green Line', color: '#17b26a' },
+      { name: 'Violet Line', color: '#a855f7' },
+      { name: 'Pink Line', color: '#f472b6' },
+      { name: 'Magenta Line', color: '#ec4899' },
+      { name: 'Grey Line', color: '#64748b' },
+      { name: 'Airport Express', color: '#f98407' },
+    ],
   },
   {
     id: 'hyderabad',
     name: 'Hyderabad Metro',
     state: 'Telangana',
-    stations: 57,
+    stations: 56,
     linesCount: 3,
     dailyPassengers: 480000,
-    lines: linesFor(3),
+    totalTrains: 57,
+    lines: [
+      { name: 'Red Line', color: '#f04438' },
+      { name: 'Blue Line', color: '#2f5df0' },
+      { name: 'Green Line', color: '#17b26a' },
+    ],
   },
   {
     id: 'bengaluru',
     name: 'Bengaluru Metro',
     state: 'Karnataka',
-    stations: 45,
-    linesCount: 2,
+    stations: 140,
+    linesCount: 5,
     dailyPassengers: 820000,
-    lines: linesFor(2),
+    totalTrains: 55,
+    lines: [
+      { name: 'Purple Line', color: '#7c5cff' },
+      { name: 'Green Line', color: '#17b26a' },
+      { name: 'Yellow Line', color: '#f7c948' },
+      { name: 'Pink Line', color: '#f472b6' },
+      { name: 'Blue Line', color: '#2f5df0' },
+    ],
   },
   {
     id: 'mumbai',
     name: 'Mumbai Metro',
     state: 'Maharashtra',
-    stations: 32,
-    linesCount: 3,
+    stations: 177,
+    linesCount: 9,
     dailyPassengers: 1250000,
-    lines: linesFor(3),
+    totalTrains: 57,
+    lines: [
+      { name: 'Western Metro Line', color: '#f98407' },
+      { name: 'Central Metro Line', color: '#7c5cff' },
+      { name: 'Harbour Metro Line', color: '#17b26a' },
+      { name: 'Thane Metro Line', color: '#ea580c' },
+      { name: 'Proposed Metro - Under Construction', color: '#b91c1c' },
+      { name: 'Proposed Metro Extension', color: '#f97316' },
+      { name: 'Proposed Metro - Extension', color: '#f59e0b' },
+      { name: 'Proposed Metro - Extension 2', color: '#06b6d4' },
+      { name: 'Proposed Metro - Extension 3', color: '#6366f1' },
+    ],
   },
   {
     id: 'chennai',
     name: 'Chennai Metro',
     state: 'Tamil Nadu',
-    stations: 40,
-    linesCount: 2,
+    stations: 66,
+    linesCount: 5,
     dailyPassengers: 510000,
-    lines: linesFor(2),
+    totalTrains: 52,
+    lines: [
+      { name: 'Green Line', color: '#17b26a' },
+      { name: 'Purple Line', color: '#7c5cff' },
+      { name: 'Red Dotted Corridor', color: '#ef4444' },
+      { name: 'Orange Line', color: '#f98407' },
+      { name: 'Light Blue Corridor', color: '#38bdf8' },
+    ],
   },
   {
     id: 'kolkata',
     name: 'Kolkata Metro',
     state: 'West Bengal',
-    stations: 30,
-    linesCount: 3,
+    stations: 93,
+    linesCount: 6,
     dailyPassengers: 690000,
-    lines: linesFor(3),
+    totalTrains: 366,
+    lines: [
+      { name: 'Line 1', color: '#2f5df0' },
+      { name: 'Line 2', color: '#17b26a' },
+      { name: 'Line 3', color: '#7c5cff' },
+      { name: 'Line 4', color: '#f7c948' },
+      { name: 'Line 5', color: '#f472b6' },
+      { name: 'Line 6', color: '#f98407' },
+    ],
   },
   {
     id: 'lucknow',
     name: 'Lucknow Metro',
     state: 'Uttar Pradesh',
-    stations: 21,
-    linesCount: 1,
+    stations: 40,
+    linesCount: 3,
     dailyPassengers: 120000,
-    lines: linesFor(1),
+    totalTrains: 20,
+    lines: [
+      { name: 'N-S Corridor (Elevated)', color: '#2f5df0' },
+      { name: 'N-S Corridor (Underground)', color: '#f04438' },
+      { name: 'E-W Corridor', color: '#991b1b' },
+    ],
   },
   {
     id: 'jaipur',
     name: 'Jaipur Metro',
     state: 'Rajasthan',
-    stations: 11,
-    linesCount: 1,
+    stations: 32,
+    linesCount: 3,
     dailyPassengers: 60000,
-    lines: linesFor(1),
+    totalTrains: 10,
+    lines: [
+      { name: 'Operational', color: '#f04438' },
+      { name: 'Under Construction', color: '#f04438' },
+      { name: 'Proposed', color: '#2f5df0' },
+    ],
   },
   {
     id: 'kochi',
     name: 'Kochi Metro',
     state: 'Kerala',
-    stations: 25,
+    stations: 22,
     linesCount: 1,
     dailyPassengers: 110000,
-    lines: linesFor(1),
+    totalTrains: 25,
+    lines: [
+      { name: 'Kochi Metro', color: '#f04438' },
+    ],
   },
   {
     id: 'pune',
     name: 'Pune Metro',
     state: 'Maharashtra',
-    stations: 30,
-    linesCount: 2,
+    stations: 43,
+    linesCount: 3,
     dailyPassengers: 230000,
-    lines: linesFor(2),
+    totalTrains: 34,
+    lines: [
+      { name: 'Line 1', color: '#7c5cff' },
+      { name: 'Line 2', color: '#06b6d4' },
+      { name: 'Line 3', color: '#f04438' },
+    ],
   },
 ];
 
-export const getCityById = (id) => cities.find((c) => c.id === id);
-
-/** Optional helper to fetch dynamic city list from FastAPI */
-export async function fetchCitiesFromBackend() {
-  try {
-    const res = await fetch(`${API_BASE_URL}/cities`);
-    if (res.ok) {
-      return await res.json();
-    }
-  } catch (err) {
-    console.warn('FastAPI backend offline for cities list, using static list');
-  }
-  return cities;
-}
+export const getCityById = (id) => cities.find((c) => c.id === String(id || '').toLowerCase());

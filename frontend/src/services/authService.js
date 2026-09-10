@@ -1,6 +1,6 @@
 import { AUTH_STORAGE_KEY } from '@/constants';
+import { loginApi, socialLoginApi, registerApi, updateProfileApi as apiUpdateProfile, changePasswordApi as apiChangePassword } from '@/services/metroflowApi';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
 const USERS_KEY = 'metroflow_users_v2';
 
 function readUsers() {
@@ -34,24 +34,28 @@ function toSession(user, token) {
   return { user: safeUser, token: token || `mock-jwt-${user.id}-${Date.now()}` };
 }
 
+/**
+/ Authenticate user using backend FastAPI /api/auth/login, falling back to local demo storage if backend is unreachable.
+*/
 export async function login({ email, password, rememberMe }) {
   try {
-    const res = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, rememberMe }),
-    });
-    if (res.ok) {
-      const session = await res.json();
+    const data = await loginApi({ email, password });
+    if (data && data.user && data.token) {
+      const session = { user: data.user, token: data.token };
       const storage = rememberMe ? localStorage : sessionStorage;
       storage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
       return session;
     }
   } catch (err) {
-    console.warn('FastAPI backend offline or unreachable, falling back to local service:', err);
+    const errorMsg = err.response?.data?.detail || err.message;
+    // If backend returned explicit 401 Unauthorized or 400 Bad Request error, throw it!
+    if (err.response && (err.response.status === 401 || err.response.status === 400)) {
+      throw new Error(errorMsg);
+    }
+    console.warn("Backend auth offline or error, trying demo local storage:", err.message);
   }
 
-  // Fallback to local storage
+  // Fallback to local storage (for offline demo mode)
   await delay();
   const users = readUsers();
   const found = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
@@ -64,26 +68,68 @@ export async function login({ email, password, rememberMe }) {
   return session;
 }
 
-export async function registerAccount({ name, phone, email, password, profileImage }) {
+/**
+/ Social authentication (Google / Microsoft) via backend /api/auth/social-login with offline fallback.
+*/
+export async function loginWithSocial({ provider, email, name, phone, profileImage, rememberMe = true }) {
   try {
-    const res = await fetch(`${API_BASE_URL}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, phone, email, password, profileImage }),
-    });
-    if (res.ok) {
-      return await res.json();
+    const data = await socialLoginApi({ provider, email, name, phone, profileImage, rememberMe });
+    if (data && data.user && data.token) {
+      const session = { user: data.user, token: data.token };
+      const storage = rememberMe ? localStorage : sessionStorage;
+      storage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
+      return session;
     }
-    const errData = await res.json();
-    if (errData.detail) throw new Error(errData.detail);
   } catch (err) {
-    if (err.message && !err.message.includes('fetch')) {
-      throw err;
-    }
-    console.warn('FastAPI backend offline, executing local register fallback:', err);
+    console.warn(`Backend social auth (${provider}) offline or error, falling back to demo storage:`, err.message);
   }
 
-  // Fallback
+  await delay(400);
+  const users = readUsers();
+  let found = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+  if (!found) {
+    const displayName = name || email.split('@')[0].split('.').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
+    found = {
+      id: `USR-${provider.toUpperCase()}-${Date.now()}`,
+      name: displayName,
+      email: email,
+      password: `social-${provider}`,
+      phone: phone || '',
+      role: 'Passenger',
+      status: 'Active',
+      profileImage: profileImage || null,
+      dateJoined: new Date().toISOString(),
+    };
+    users.push(found);
+    writeUsers(users);
+  } else if (phone) {
+    found.phone = phone;
+    writeUsers(users);
+  }
+  const session = toSession(found);
+  const storage = rememberMe ? localStorage : sessionStorage;
+  storage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
+  return session;
+}
+
+/**
+/ Registers a new user via backend FastAPI /api/auth/register, falling back to local storage if backend is unreachable.
+*/
+export async function registerAccount({ name, phone, email, password, profileImage }) {
+  try {
+    const registeredUser = await registerApi({ name, phone, email, password, profileImage });
+    if (registeredUser) {
+      return registeredUser;
+    }
+  } catch (err) {
+    const errorMsg = err.response?.data?.detail || err.message;
+    if (err.response && (err.response.status === 400 || err.response.status === 422)) {
+      throw new Error(errorMsg);
+    }
+    console.warn("Backend registration offline or error, falling back to local storage:", err.message);
+  }
+
+  // Fallback to local storage
   await delay();
   const users = readUsers();
   if (users.some((u) => u.email.toLowerCase() === email.toLowerCase())) {
@@ -115,25 +161,21 @@ export function clearSession() {
   sessionStorage.removeItem(AUTH_STORAGE_KEY);
 }
 
+/** Updates user profile fields across session storage and backend API if available. */
 export async function updateUserProfile(userId, patch) {
   try {
-    const res = await fetch(`${API_BASE_URL}/auth/profile/${userId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(patch),
-    });
-    if (res.ok) {
-      const updatedUser = await res.json();
+    const updatedUser = await apiUpdateProfile(userId, patch);
+    if (updatedUser) {
       const session = getStoredSession();
-      if (session?.user?.id === userId) {
-        const updatedSession = { ...session, user: updatedUser };
+      if (session) {
+        const updatedSession = { ...session, user: { ...session.user, ...updatedUser } };
         const target = localStorage.getItem(AUTH_STORAGE_KEY) ? localStorage : sessionStorage;
         target.setItem(AUTH_STORAGE_KEY, JSON.stringify(updatedSession));
       }
       return updatedUser;
     }
-  } catch (err) {
-    console.warn('FastAPI profile update fallback:', err);
+  } catch (e) {
+    console.warn("Backend profile update fallback:", e.message);
   }
 
   const users = readUsers();
@@ -153,20 +195,15 @@ export async function updateUserProfile(userId, patch) {
   return safeUser;
 }
 
+/** Password change via backend FastAPI with local fallback. */
 export async function changePassword(userId, { currentPassword, newPassword }) {
   try {
-    const res = await fetch(`${API_BASE_URL}/auth/change-password?user_id=${userId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ currentPassword, newPassword }),
-    });
-    if (res.ok) {
-      return await res.json();
-    }
-    const errData = await res.json();
-    if (errData.detail) throw new Error(errData.detail);
+    const result = await apiChangePassword(userId, { currentPassword, newPassword });
+    return result;
   } catch (err) {
-    if (err.message && !err.message.includes('fetch')) throw err;
+    if (err.response?.data?.detail) {
+      throw new Error(err.response.data.detail);
+    }
   }
 
   await delay(500);

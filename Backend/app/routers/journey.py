@@ -73,3 +73,69 @@ def plan_journey(payload: JourneyPlanRequest, db: Session = Depends(get_db)):
         "optimalTime": optimal_time,
         "steps": steps
     }
+
+from app.models.ticket import Ticket
+from app.schemas.schemas import BookTicketRequest
+import datetime
+
+@router.post("/book-ticket")
+def book_ticket(payload: BookTicketRequest, db: Session = Depends(get_db)):
+    ticket_id = f"TCK-{int(datetime.datetime.utcnow().timestamp())}-{random.randint(1000, 9999)}"
+    qr_data = f"METROFLOW:{payload.cityId}:{payload.originStation}:{payload.destinationStation}:{ticket_id}"
+
+    ticket = Ticket(
+        id=ticket_id,
+        user_id=payload.userId,
+        city_id=payload.cityId,
+        origin_station=payload.originStation,
+        destination_station=payload.destinationStation,
+        ticket_type=payload.ticketType or "Single Journey",
+        passenger_count=payload.passengerCount or 1,
+        fare=payload.fare,
+        qr_code=qr_data,
+        status="Active",
+        booking_time=datetime.datetime.utcnow()
+    )
+    db.add(ticket)
+    db.commit()
+    db.refresh(ticket)
+
+    return {
+        "message": "Ticket booked successfully and stored in PostgreSQL database.",
+        "ticket": {
+            "id": ticket.id,
+            "cityId": ticket.city_id,
+            "originStation": ticket.origin_station,
+            "destinationStation": ticket.destination_station,
+            "ticketType": ticket.ticket_type,
+            "passengerCount": ticket.passenger_count,
+            "fare": ticket.fare,
+            "qrCode": ticket.qr_code,
+            "status": ticket.status,
+            "bookingTime": ticket.booking_time.isoformat()
+        }
+    }
+
+@router.get("/tickets")
+def get_user_tickets(userId: str = None, cityId: str = None, db: Session = Depends(get_db)):
+    query = db.query(Ticket)
+    if userId:
+        query = query.filter(Ticket.user_id == userId)
+    if cityId:
+        query = query.filter(Ticket.city_id == cityId)
+    
+    tickets = query.order_by(Ticket.booking_time.desc()).all()
+    return [
+        {
+            "id": t.id,
+            "cityId": t.city_id,
+            "originStation": t.origin_station,
+            "destinationStation": t.destination_station,
+            "ticketType": t.ticket_type,
+            "passengerCount": t.passenger_count,
+            "fare": t.fare,
+            "qrCode": t.qr_code,
+            "status": t.status,
+            "bookingTime": t.booking_time.isoformat() if t.booking_time else None
+        } for t in tickets
+    ]

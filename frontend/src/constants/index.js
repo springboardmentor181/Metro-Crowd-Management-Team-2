@@ -66,8 +66,9 @@ export const CROWD_STATUS = {
 };
 
 export function occupancyToStatus(occupancy) {
-  if (occupancy >= 90) return CROWD_STATUS.RED;
-  if (occupancy >= 70) return CROWD_STATUS.ORANGE;
-  if (occupancy >= 45) return CROWD_STATUS.YELLOW;
+  if (occupancy >= 85) return CROWD_STATUS.RED;
+  if (occupancy >= 65) return CROWD_STATUS.ORANGE;
+  if (occupancy >= 40) return CROWD_STATUS.YELLOW;
   return CROWD_STATUS.GREEN;
 }
+

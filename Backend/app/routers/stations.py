@@ -8,8 +8,12 @@ from app.services.seed import occupancy_to_status
 router = APIRouter(prefix="/stations", tags=["Stations"])
 
 @router.get("")
-def get_stations(city_id: str, db: Session = Depends(get_db)):
-    stations = db.query(Station).filter(Station.city_id == city_id).all()
+def get_stations(city_id: str = None, city: str = None, db: Session = Depends(get_db)):
+    target_city = city_id or city
+    if not target_city:
+        stations = db.query(Station).all()
+    else:
+        stations = db.query(Station).filter(Station.city_id.ilike(target_city)).all()
     return [
         {
             "id": s.id,

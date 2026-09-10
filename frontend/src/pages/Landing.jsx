@@ -155,7 +155,7 @@ export default function Landing() {
             className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 px-4 py-8 backdrop-blur-md"
             onClick={(e) => e.target === e.currentTarget && setAuthOpen(false)}
           >
-            <AuthShell view={authView} onViewChange={setAuthView} onSignedIn={handleSignedIn} />
+            <AuthShell view={authView} onViewChange={setAuthView} onSignedIn={handleSignedIn} onClose={() => setAuthOpen(false)} />
           </motion.div>
         )}
       </AnimatePresence>

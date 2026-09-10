@@ -19,6 +19,12 @@ export function AuthProvider({ children }) {
     return session;
   }, []);
 
+  const loginWithSocial = useCallback(async (payload) => {
+    const session = await authService.loginWithSocial(payload);
+    setUser(session.user);
+    return session;
+  }, []);
+
   /**
    * Creates a new account but does NOT sign the user in — per the "Create
    * Account" popup flow, control returns to the Login popup afterwards.
@@ -57,6 +63,7 @@ export function AuthProvider({ children }) {
         isAuthenticated: Boolean(user),
         isInitializing,
         login,
+        loginWithSocial,
         registerAccount,
         logout,
         updateProfile,

@@ -88,8 +88,9 @@ def get_full_city_data(city_id: str, db: Session = Depends(get_db)):
     risk_stations = []
     for s in sorted_risk:
         occ = s["occupancy"]
-        risk_label = "Critical" if occ >= 90 else ("High" if occ >= 70 else ("Medium" if occ >= 45 else "Low"))
+        risk_label = "Critical" if occ >= 85 else ("High" if occ >= 65 else ("Medium" if occ >= 40 else "Low"))
         risk_stations.append({**s, "risk": risk_label})
+
 
     formatted_alerts = []
     for a in alerts:

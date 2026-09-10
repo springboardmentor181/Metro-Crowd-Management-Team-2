@@ -6,6 +6,7 @@ from app.models.alert import CrowdAlert
 from app.models.ai_prediction import AiPrediction
 from app.models.analytics import AnalyticsData
 from app.models.otp import OtpRecord
+from app.models.ticket import Ticket
 
 __all__ = [
     "User",
@@ -15,5 +16,6 @@ __all__ = [
     "CrowdAlert",
     "AiPrediction",
     "AnalyticsData",
-    "OtpRecord"
+    "OtpRecord",
+    "Ticket"
 ]

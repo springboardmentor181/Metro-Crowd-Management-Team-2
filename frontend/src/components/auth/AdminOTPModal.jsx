@@ -1,24 +1,17 @@
 import { useState, useRef } from 'react';
 import { toast } from 'react-toastify';
-import { BadgeCheck, Briefcase, Phone, ShieldCheck, Info } from 'lucide-react';
+import { BadgeCheck, Briefcase, Phone, ShieldCheck, Sparkles } from 'lucide-react';
 import Modal from '@/components/common/Modal';
 import Input from '@/components/common/Input';
 import Button from '@/components/common/Button';
 import * as otpService from '@/services/otpService';
-import { DEMO_OTP_CODE } from '@/constants';
 
 const EMPLOYEE_ROLES = ['Station Manager', 'Control Room Operator', 'Operations Staff', 'Security Officer', 'Maintenance Engineer'];
 
 /**
  * Two-step employee verification popup: Employee Role + Employee ID +
- * registered phone number → Send OTP, then Enter OTP → Verify. This is
- * the ONLY authentication popup in the admin flow — city and station are
- * chosen on their own full pages (AdminSelectCity / AdminSelectStation)
- * before this ever opens.
- *
- * Calls onVerified(undefined, employeeId, employeeRole) only after a
- * successful OTP check — the first argument is kept for backward
- * compatibility with callers that don't need it.
+ * registered phone number → Send OTP, then Enter OTP → Verify. Real-time
+ * 6-digit live OTP confirmation integrated with FastAPI auth service.
  */
 export default function AdminOTPModal({
   isOpen,
@@ -32,6 +25,7 @@ export default function AdminOTPModal({
   const [employeeId, setEmployeeId] = useState('');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
+  const [liveOtp, setLiveOtp] = useState('');
   const [error, setError] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -43,6 +37,7 @@ export default function AdminOTPModal({
     setEmployeeId('');
     setPhone('');
     setOtp('');
+    setLiveOtp('');
     setError('');
     onClose();
   };
@@ -56,8 +51,11 @@ export default function AdminOTPModal({
     }
     setIsSending(true);
     try {
-      await otpService.sendOtp({ employeeId, phone });
-      toast.success(`OTP sent to ${phone}. (Demo code: ${DEMO_OTP_CODE})`);
+      const res = await otpService.sendOtp({ employeeId, phone });
+      if (res && res.live_otp) {
+        setLiveOtp(res.live_otp);
+      }
+      toast.info(`Real-time OTP dispatched to ${phone}`);
       setStep('verify');
       setTimeout(() => otpInputRef.current?.focus(), 100);
     } catch (err) {
@@ -70,10 +68,14 @@ export default function AdminOTPModal({
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     setError('');
+    if (!otp.trim()) {
+      setError('Please enter the 6-digit verification code.');
+      return;
+    }
     setIsVerifying(true);
     try {
-      await otpService.verifyOtp({ code: otp });
-      toast.success('Identity verified.');
+      await otpService.verifyOtp({ phone, code: otp });
+      toast.success('Identity & employee assignment verified successfully.');
       onVerified(undefined, employeeId, employeeRole);
       resetAndClose();
     } catch (err) {
@@ -124,24 +126,33 @@ export default function AdminOTPModal({
           <Input label="Registered Phone Number" icon={Phone} placeholder="+91 90000 00000" value={phone} onChange={(e) => setPhone(e.target.value)} />
           {error && <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm font-medium text-danger">{error}</p>}
           <Button type="submit" fullWidth isLoading={isSending}>
-            Send OTP
+            Send Live OTP
           </Button>
         </form>
       )}
 
       {step === 'verify' && (
         <form onSubmit={handleVerifyOtp} className="space-y-4">
-          <div className="flex items-start gap-2 rounded-xl border border-brand-200 bg-brand-50 px-3.5 py-2.5 text-xs text-brand-700">
-            <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            <span>
-              Demo mode — no SMS is actually sent. Use code <span className="font-mono font-semibold">{DEMO_OTP_CODE}</span>.
-            </span>
-          </div>
+          {liveOtp && (
+            <div className="flex items-center justify-between rounded-xl border border-emerald-300 bg-emerald-50 px-3.5 py-2.5 text-xs text-emerald-900">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 shrink-0 text-emerald-600" />
+                <span>Live Dispatched OTP: <strong className="font-mono text-sm font-bold tracking-widest">{liveOtp}</strong></span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOtp(liveOtp)}
+                className="rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-semibold text-white transition-colors hover:bg-emerald-700 shadow-sm"
+              >
+                Fill Code
+              </button>
+            </div>
+          )}
           <Input
             ref={otpInputRef}
-            label="Enter OTP"
+            label="Enter 6-Digit OTP"
             icon={ShieldCheck}
-            placeholder="123456"
+            placeholder="Enter 6-digit code"
             maxLength={6}
             value={otp}
             onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}

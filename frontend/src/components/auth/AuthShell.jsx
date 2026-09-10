@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrainFront, Gauge, BrainCircuit, ShieldCheck } from 'lucide-react';
+import { TrainFront, Gauge, BrainCircuit, ShieldCheck, X } from 'lucide-react';
 import AuthenticationModal from '@/components/auth/AuthenticationModal';
 import CreateAccountModal from '@/components/auth/CreateAccountModal';
 import { APP_NAME } from '@/constants';
@@ -17,7 +17,7 @@ const SIDE_HIGHLIGHTS = [
  * the app; Landing and the dedicated /login route both render this same
  * shell so there is never more than one login UI.
  */
-export default function AuthShell({ view, onViewChange, onSignedIn }) {
+export default function AuthShell({ view, onViewChange, onSignedIn, onClose }) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.96, y: 16 }}
@@ -69,7 +69,17 @@ export default function AuthShell({ view, onViewChange, onSignedIn }) {
       </div>
 
       {/* ===== Right: tabs + forms ===== */}
-      <div className="w-full p-6 sm:p-7 md:w-3/5">
+      <div className="relative w-full min-h-0 max-h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain p-4 sm:p-6 md:w-3/5 md:p-7">
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/80 transition-colors hover:bg-white/20 hover:text-white focus-ring sm:right-4 sm:top-4"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
         <div className="mb-5 flex items-center justify-center gap-2 md:hidden">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 text-white">
             <TrainFront className="h-5 w-5" />

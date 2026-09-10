@@ -94,19 +94,58 @@ export function TrendLineChart({ data, xKey, series, height = 280 }) {
   );
 }
 
-export function DonutChart({ data, height = 260, colors }) {
-  const palette = colors || ['#2f5df0', '#7c5cff', '#f98407', '#17b26a', '#f04438', '#f7c948'];
+export function DonutChart({ data = [], height = 210, colors }) {
+  const palette = colors || ['#2f5df0', '#7c5cff', '#f98407', '#17b26a', '#f04438', '#f7c948', '#ec4899', '#a855f7', '#06b6d4', '#64748b'];
+
+  const total = data.reduce((sum, item) => sum + Number(item.value || 0), 0);
+
   return (
-    <ResponsiveContainer width="100%" height={height}>
-      <PieChart>
-        <Pie data={data} dataKey="value" nameKey="name" innerRadius="60%" outerRadius="85%" paddingAngle={2}>
-          {data.map((entry, i) => (
-            <Cell key={entry.name} fill={entry.color || palette[i % palette.length]} />
-          ))}
-        </Pie>
-        <Tooltip content={<ChartTooltip />} />
-        <Legend wrapperStyle={{ fontSize: 12 }} />
-      </PieChart>
-    </ResponsiveContainer>
+    <div className="flex flex-col items-center gap-3">
+      <div className="w-full relative" style={{ height }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={data}
+              dataKey="value"
+              nameKey="name"
+              innerRadius="60%"
+              outerRadius="85%"
+              paddingAngle={3}
+            >
+              {data.map((entry, i) => (
+                <Cell key={entry.name || i} fill={entry.color || palette[i % palette.length]} />
+              ))}
+            </Pie>
+            <Tooltip content={<ChartTooltip />} />
+          </PieChart>
+        </ResponsiveContainer>
+        {total > 0 && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+            <span className="text-[11px] font-medium text-slate-400">Total Inflow</span>
+            <span className="text-sm font-bold text-slate-800 dark:text-white">
+              {total >= 100000 ? `${(total / 100000).toFixed(1)}L` : total.toLocaleString('en-IN')}
+            </span>
+          </div>
+        )}
+      </div>
+
+      <div className="w-full max-h-40 overflow-y-auto pr-1 grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
+        {data.map((entry, i) => {
+          const pct = total > 0 ? ((entry.value / total) * 100).toFixed(1) : '0';
+          const color = entry.color || palette[i % palette.length];
+          return (
+            <div key={entry.name || i} className="flex items-center justify-between gap-1.5 truncate py-0.5">
+              <div className="flex items-center gap-1.5 truncate">
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
+                <span className="truncate text-slate-600 font-medium dark:text-slate-300" title={entry.name}>
+                  {entry.name}
+                </span>
+              </div>
+              <span className="shrink-0 text-slate-400 font-semibold text-[11px]">{pct}%</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }

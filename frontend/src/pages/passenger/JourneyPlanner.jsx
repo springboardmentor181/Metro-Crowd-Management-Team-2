@@ -12,7 +12,7 @@ export default function JourneyPlanner() {
   const [result, setResult] = useState(null);
 
   if (!data) return null;
-  const stationNames = data.stations.map((s) => s.name);
+  const stationNames = Array.from(new Set(data.stations.map((s) => s.name))).sort((a, b) => a.localeCompare(b));
 
   const handleSearch = (e) => {
     e.preventDefault();
