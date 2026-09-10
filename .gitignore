@@ -1,3 +1,7 @@
 Backend/venv/
 __pycache__/
 *.pyc
+node_modules/
+Frontend/dist/
+.env
+.env.local
